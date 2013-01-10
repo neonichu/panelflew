@@ -14,14 +14,30 @@ class PanelFlyIssue:
 
 		self.pages = []
 		for pageNode in issue.find('pages').iter('page'):
+			try:
+				pageNum = int(pageNode.get('number', 0))
+			except:
+				pageNum = self.pages[-1]['number'] + 1
+
 			page = { 	'path': os.path.join(path, pageNode.get('path')), 
-						'number': int(pageNode.get('number', 0)) }
+						'number': pageNum }
+
 			self.pages.append(page)
 
 	def __str__(self):
 		return self.name
 
+def panelfly_export(filename):
+	issue = PanelFlyIssue(filename)
+	print 'Exporting %s...' % issue.name
+	cbz = CBZ([page['path'] for page in issue.pages])
+	cbz.export(issue.name + '.cbz')
+
+def panelfly_visitor(arg, dirname, files):
+	for filename in files:
+		if filename == 'page_index.xml':
+			panelfly_export(os.path.join(dirname, filename))
+
 if __name__ == '__main__':
-    issue = PanelFlyIssue('/Users/neonacho/Desktop/Panelfly/Issues/2/1/page_index.xml')
-    cbz = CBZ([page['path'] for page in issue.pages])
-    cbz.export(issue.name + '.cbz')
+	path = os.path.expanduser('~/Desktop/Panelfly/Issues')
+	os.path.walk(path, panelfly_visitor, None)
